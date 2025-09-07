@@ -1,4 +1,7 @@
-<script setup></script>
+<script setup>
+import { RouterView } from 'vue-router';
+
+</script>
 
 <template>
   <div class="common-layout">
@@ -20,16 +23,20 @@
       <el-container>
         <!-- 左侧菜单 -->
         <el-aside width="600px" class="aside">
-          <el-menu>
-            <el-sub-menu index="1">
+          <el-menu router>
+            <!-- 首页菜单 -->
+            <el-menu-item index="/index">
+              <el-icon><Promotion /></el-icon> Home
+            </el-menu-item>
+            <el-sub-menu index="manage">
               <template #title>
                 <el-icon><HomeFilled /></el-icon>Class&Student Management
               </template>
 
-              <el-menu-item index="1-1"
+              <el-menu-item index="clazz"
                 ><el-icon><Bell /></el-icon>Class Management</el-menu-item
               >
-              <el-menu-item index="1-2"
+              <el-menu-item index="stu"
                 ><el-icon><User /></el-icon>Student Management</el-menu-item
               >
             </el-sub-menu>
@@ -64,7 +71,9 @@
           </el-menu>
         </el-aside>
 
-        <el-main> 右侧核心展示区域 </el-main>
+        <el-main>
+          <router-view></router-view>
+        </el-main>
       </el-container>
     </el-container>
   </div>
