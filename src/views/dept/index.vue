@@ -1,22 +1,141 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { queryAllApi } from "@/api/dept";
+import {
+  queryAllApi,
+  addApi,
+  queryByIdApi,
+  updateApi,
+  deleteByIdApi,
+} from "@/api/dept";
+import { ElMessage, ElMessageBox } from "element-plus";
 
 //钩子函数
 onMounted(() => {
   search();
-})
+});
 
 //查询
-const deptList = ref([])
+const deptList = ref([]);
 const search = async () => {
   const result = await queryAllApi();
-  if(result.code){
+  if (result.code) {
     deptList.value = result.data;
   }
-}
+};
+//Dialog对话框
+const dialogFormVisible = ref(false);
+const formTitle = ref("");
+const dept = ref({ name: "" });
+//新增部门
+const addDept = () => {
+  dialogFormVisible.value = true;
+  formTitle.value = "Add Department";
+  dept.value = { name: "" };
 
+  //重置表单的校验规则-提示信息
+  if (deptFormRef.value) {
+    deptFormRef.value.resetFields();
+  }
+};
 
+//保存部门
+const save = async () => {
+  //表单校验
+  if (!deptFormRef.value) return;
+  deptFormRef.value.validate(async (valid) => {
+    //valid 表示是否校验通过: true 通过 / false  不通过
+    if (valid) {
+      //通过
+
+      let result;
+      if (dept.value.id) {
+        //修改
+        result = await updateApi(dept.value);
+      } else {
+        //新增
+        result = await addApi(dept.value);
+      }
+
+      if (result.code) {
+        //成功
+        //提示信息
+        ElMessage.success("Operation successful");
+        //关闭对话框
+        dialogFormVisible.value = false;
+        //查询
+        search();
+      } else {
+        //失败
+        ElMessage.error(result.msg);
+      }
+    } else {
+      //不通过
+      ElMessage.error("Form validation failed");
+    }
+  });
+};
+
+//表单校验
+const rules = ref({
+  name: [
+    {
+      required: true,
+      message: "Department name is a required field",
+      trigger: "blur",
+    },
+    {
+      min: 2,
+      max: 10,
+      message:
+        "The length of the department name should be between 2 and 10 characters.",
+      trigger: "blur",
+    },
+  ],
+});
+const deptFormRef = ref();
+
+//编辑
+const edit = async (id) => {
+  formTitle.value = "Modify department";
+  //重置表单的校验规则-提示信息
+  if (deptFormRef.value) {
+    deptFormRef.value.resetFields();
+  }
+
+  const result = await queryByIdApi(id);
+  if (result.code) {
+    dialogFormVisible.value = true;
+    dept.value = result.data;
+  }
+};
+
+//删除
+const delById = async (id) => {
+  //弹出确认框
+  ElMessageBox.confirm(
+    "Are you sure you want to delete this department?",
+    "Hint",
+    {
+      confirmButtonText: "Confirm",
+      cancelButtonText: "Cancel",
+      type: "warning",
+    }
+  )
+    .then(async () => {
+      //确认
+      const result = await deleteByIdApi(id);
+      if (result.code) {
+        ElMessage.success("Successfully deleted");
+        search();
+      } else {
+        ElMessage.error(result.msg);
+      }
+    })
+    .catch(() => {
+      //取消
+      ElMessage.info("You have canceled the deletion.");
+    });
+};
 </script>
 
 <template>
@@ -52,6 +171,21 @@ const search = async () => {
       </el-table-column>
     </el-table>
   </div>
+
+  <!-- Dialog对话框 -->
+  <el-dialog v-model="dialogFormVisible" :title="formTitle" width="500">
+    <el-form :model="dept" :rules="rules" ref="deptFormRef">
+      <el-form-item label="Dpt Name" label-width="80px" prop="name">
+        <el-input v-model="dept.name" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="dialogFormVisible = false">Cancel</el-button>
+        <el-button type="primary" @click="save">confirm</el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <style scoped>
